@@ -1,0 +1,94 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2>Rétention</h2>
+        <form class="row g-2 mb-3">
+            <div class="col-12 col-md-3"><input class="form-control" type="date" name="p1Start" th:value="${p1Start}" /></div>
+            <div class="col-12 col-md-3"><input class="form-control" type="date" name="p1End" th:value="${p1End}" /></div>
+            <div class="col-12 col-md-3"><input class="form-control" type="date" name="p2Start" th:value="${p2Start}" /></div>
+            <div class="col-12 col-md-3"><input class="form-control" type="date" name="p2End" th:value="${p2End}" /></div>
+            <div class="col-12"><button class="btn btn-outline-secondary" type="submit">Recalculer</button></div>
+        </form>
+        <div class="row g-3">
+            <div class="col-12 col-lg-6">
+                <div class="card p-3 h-100">
+                    <h4 class="mb-2">Taux de rétention</h4>
+                    <div class="display-6" th:text="${#numbers.formatPercent(retention.retentionRate, 1, 1)}"></div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="card p-3 h-100">
+                    <h4 class="mb-2">Comparaison Périodes</h4>
+                    <canvas id="retChart" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+        <script th:inline="javascript">
+            const r1 = /*[[${retention.baseCohortSize}]]*/ 0;
+            const r2 = /*[[${retention.retainedCount}]]*/ 0;
+            const rc = document.getElementById('retChart');
+            if (rc && window.Chart) {
+                const lost = r1 - r2;
+                new Chart(rc, {
+                    type: 'doughnut',
+                    data: { 
+                        labels: ['Membres conservés', 'Membres perdus'], 
+                        datasets: [{ 
+                            data: [r2, lost],
+                            backgroundColor: [
+                                'rgba(25, 135, 84, 0.8)',
+                                'rgba(220, 53, 69, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(25, 135, 84, 1)',
+                                'rgba(220, 53, 69, 1)'
+                            ],
+                            borderWidth: 3,
+                            hoverBorderWidth: 5
+                        }] 
+                    },
+                    options: { 
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: {
+                            duration: 1500
+                        },
+                        plugins: { 
+                            legend: { 
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 13 },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#198754',
+                                borderWidth: 1,
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const percentage = ((value / r1) * 100).toFixed(1);
+                                        return label + ': ' + value + ' membres (' + percentage + '%)';
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Analyse de rétention des membres',
+                                font: { size: 15, weight: 'bold' },
+                                padding: { bottom: 15 }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    </section>
+</div>
+
+

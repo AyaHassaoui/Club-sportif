@@ -1,0 +1,217 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2>Fréquentation par activité</h2>
+        <div class="row mt-3">
+            <div class="col-12 col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Graphique de Fréquentation</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary active" onclick="changeChartType('bar')">Barres</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="changeChartType('line')">Ligne</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="changeChartType('pie')">Camembert</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="freqChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-table me-2"></i>Données Détaillées</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr><th>Activité</th><th>Inscriptions</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="r : ${rows}">
+                                        <td th:text="${r.activiteNom}"></td>
+                                        <td>
+                                            <span class="badge bg-primary" th:text="${r.totalInscriptions}"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script th:inline="javascript">
+            // Données du serveur
+            const freqLabels = /*[[${rows.![activiteNom]}]]*/ [];
+            const freqValues = /*[[${rows.![totalInscriptions]}]]*/ [];
+            
+            console.log('Données reçues:', { freqLabels, freqValues });
+            
+            // Attendre que tout soit chargé
+            window.addEventListener('load', function() {
+                const ctx = document.getElementById('freqChart');
+                let chartInstance = null;
+                
+                if (!ctx) {
+                    console.error('Canvas non trouvé');
+                    return;
+                }
+                
+                if (!window.Chart) {
+                    console.error('Chart.js non chargé');
+                    return;
+                }
+                
+                const colors = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2', '#fd7e14', '#20c997', '#0dcaf0'];
+                
+                function createChart(type) {
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                    }
+                    
+                    const commonOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: { 
+                            legend: { 
+                                display: type === 'pie',
+                                position: 'right',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13, weight: 'bold' },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#0d6efd',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                displayColors: true,
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        if (type === 'pie') {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                            return 'Part: ' + percentage + '%';
+                                        }
+                                        return '';
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Répartition des inscriptions par activité',
+                                font: { size: 16, weight: 'bold' },
+                                padding: { bottom: 20 }
+                            }
+                        }
+                    };
+                    
+                    const scales = type === 'pie' ? {} : {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                lineWidth: 1
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { display: false }
+                        }
+                    };
+                    
+                    const datasetConfig = {
+                        label: 'Nombre d\'inscriptions',
+                        data: freqValues,
+                        backgroundColor: freqValues.map((_, i) => colors[i % colors.length]),
+                        borderColor: freqValues.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 2
+                    };
+                    
+                    if (type === 'bar') {
+                        datasetConfig.borderRadius = 8;
+                        datasetConfig.borderSkipped = false;
+                    } else if (type === 'line') {
+                        datasetConfig.fill = false;
+                        datasetConfig.tension = 0.4;
+                        datasetConfig.pointBackgroundColor = '#0d6efd';
+                        datasetConfig.pointBorderColor = '#fff';
+                        datasetConfig.pointBorderWidth = 3;
+                        datasetConfig.pointRadius = 6;
+                        datasetConfig.pointHoverRadius = 8;
+                    } else if (type === 'pie') {
+                        datasetConfig.borderColor = '#fff';
+                        datasetConfig.borderWidth = 3;
+                        datasetConfig.hoverBorderWidth = 5;
+                        datasetConfig.hoverOffset = 10;
+                    }
+                    
+                    try {
+                        chartInstance = new Chart(ctx, {
+                            type: type,
+                            data: { 
+                                labels: freqLabels, 
+                                datasets: [datasetConfig] 
+                            },
+                            options: {
+                                ...commonOptions,
+                                scales: scales
+                            }
+                        });
+                        console.log('Graphique créé avec succès');
+                    } catch (error) {
+                        console.error('Erreur lors de la création du graphique:', error);
+                    }
+                }
+                
+                // Créer le graphique initial
+                createChart('bar');
+                
+                // Fonction pour changer le type de graphique
+                window.changeChartType = function(type) {
+                    // Mettre à jour les boutons
+                    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Trouver le bouton correspondant au type
+                    const typeMap = {
+                        'bar': 'Barres',
+                        'line': 'Ligne', 
+                        'pie': 'Camembert'
+                    };
+                    
+                    const buttons = document.querySelectorAll('.btn-group .btn');
+                    buttons.forEach(btn => {
+                        if (btn.textContent.trim() === typeMap[type]) {
+                            btn.classList.add('active');
+                        }
+                    });
+                    
+                    // Changer le graphique
+                    createChart(type);
+                };
+            });
+        </script>
+    </section>
+</div>
+
+
+

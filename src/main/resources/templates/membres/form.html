@@ -1,0 +1,30 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2 th:text="${membre?.id} != null ? 'Editer Membre' : 'Nouveau Membre'"></h2>
+        <form th:action="${membre?.id} != null ? @{'/membres/' + ${membre.id}} : @{/membres}"
+              th:object="${membre}" method="post">
+            <div class="alert alert-danger" th:if="${#fields.hasErrors('*')}">
+                Veuillez corriger les erreurs ci-dessous.
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input class="form-control" type="text" th:field="*{nom}" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Catégorie</label>
+                <input class="form-control" type="text" th:field="*{categorie}" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('categorie')}" th:errors="*{categorie}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Date d'adhésion</label>
+                <input class="form-control" type="date" th:field="*{dateAdhesion}" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('dateAdhesion')}" th:errors="*{dateAdhesion}"></div>
+            </div>
+            <button class="btn btn-primary" type="submit">Enregistrer</button>
+            <a class="btn btn-secondary" th:href="@{/membres}">Annuler</a>
+        </form>
+    </section>
+</div>
+
+

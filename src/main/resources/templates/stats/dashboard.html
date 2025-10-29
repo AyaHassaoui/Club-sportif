@@ -1,0 +1,499 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chart-line me-2"></i>Tableau de Bord</h2>
+            <div class="text-muted">
+                <i class="fas fa-calendar me-1"></i>
+                <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span>
+            </div>
+        </div>
+
+        <!-- Statistiques générales -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Total Activités</h6>
+                                <h2 class="mb-0" th:text="${totalActivites}">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-dumbbell fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Total Membres</h6>
+                                <h2 class="mb-0" th:text="${totalMembres}">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Total Inscriptions</h6>
+                                <h2 class="mb-0" th:text="${totalInscriptions}">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Ce Mois</h6>
+                                <h2 class="mb-0" th:text="${inscriptionsCeMois}">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques principaux -->
+        <div class="row mb-4">
+            <!-- Graphique de fréquentation -->
+            <div class="col-lg-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Fréquentation par Activité</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="frequentationChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Graphique des catégories de membres -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Membres par Catégorie</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="membresChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques secondaires -->
+        <div class="row mb-4">
+            <!-- Graphique des niveaux d'activités -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-donut me-2"></i>Activités par Niveau</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="niveauxChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Graphique de tendance des inscriptions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Tendance des Inscriptions</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="tendanceChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphique de comparaison avancé -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Analyse Comparative des Activités</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="comparaisonChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            // Données pour les graphiques
+            const frequentationData = {
+                labels: /*[[${frequentation.![activiteNom]}]]*/ [],
+                values: /*[[${frequentation.![totalInscriptions]}]]*/ []
+            };
+            
+            const membresData = {
+                labels: /*[[${membresParCategorie.![label]}]]*/ [],
+                values: /*[[${membresParCategorie.![total]}]]*/ []
+            };
+            
+            const niveauxData = {
+                labels: /*[[${activitesParNiveau.![label]}]]*/ [],
+                values: /*[[${activitesParNiveau.![total]}]]*/ []
+            };
+
+            // Configuration des couleurs
+            const colors = {
+                primary: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2', '#fd7e14', '#20c997', '#0dcaf0'],
+                gradient: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'],
+                pastel: ['#ff9a9e', '#fecfef', '#fecfef', '#a8edea', '#fed6e3', '#d299c2']
+            };
+
+            // Graphique de fréquentation (Barres avec gradient)
+            const freqCtx = document.getElementById('frequentationChart');
+            if (freqCtx && window.Chart) {
+                new Chart(freqCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: frequentationData.labels,
+                        datasets: [{
+                            label: 'Nombre d\'inscriptions',
+                            data: frequentationData.values,
+                            backgroundColor: frequentationData.values.map((_, i) => 
+                                `linear-gradient(45deg, ${colors.gradient[i % colors.gradient.length]}, ${colors.primary[i % colors.primary.length]})`
+                            ),
+                            borderColor: colors.primary,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#0d6efd',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                displayColors: true,
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed.y / total) * 100).toFixed(1);
+                                        return 'Part: ' + percentage + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)',
+                                    lineWidth: 1
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Graphique des membres (Doughnut avec animation)
+            const membresCtx = document.getElementById('membresChart');
+            if (membresCtx && window.Chart) {
+                new Chart(membresCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: membresData.labels,
+                        datasets: [{
+                            data: membresData.values,
+                            backgroundColor: colors.pastel,
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            hoverBorderWidth: 5,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 2000
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13, weight: 'bold' },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#198754',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return label + ': ' + value + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Graphique des niveaux (Polar Area)
+            const niveauxCtx = document.getElementById('niveauxChart');
+            if (niveauxCtx && window.Chart) {
+                new Chart(niveauxCtx, {
+                    type: 'polarArea',
+                    data: {
+                        labels: niveauxData.labels,
+                        datasets: [{
+                            data: niveauxData.values,
+                            backgroundColor: [
+                                'rgba(32, 201, 151, 0.8)',
+                                'rgba(13, 202, 240, 0.8)',
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(253, 126, 20, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(32, 201, 151, 1)',
+                                'rgba(13, 202, 240, 1)',
+                                'rgba(255, 193, 7, 1)',
+                                'rgba(253, 126, 20, 1)'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            animateRotate: true,
+                            duration: 2000
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13, weight: 'bold' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#20c997',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Graphique de tendance (Line avec courbe)
+            const tendanceCtx = document.getElementById('tendanceChart');
+            if (tendanceCtx && window.Chart) {
+                // Données simulées pour la tendance (à remplacer par de vraies données)
+                const tendanceLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'];
+                const tendanceValues = [12, 19, 15, 25, 22, 30];
+                
+                new Chart(tendanceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: tendanceLabels,
+                        datasets: [{
+                            label: 'Inscriptions mensuelles',
+                            data: tendanceValues,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#0d6efd',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: 'bold' },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#0d6efd',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: { display: false }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+
+            // Graphique de comparaison (Radar)
+            const comparaisonCtx = document.getElementById('comparaisonChart');
+            if (comparaisonCtx && window.Chart) {
+                new Chart(comparaisonCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: frequentationData.labels,
+                        datasets: [{
+                            label: 'Fréquentation',
+                            data: frequentationData.values,
+                            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                            borderColor: '#0d6efd',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#0d6efd',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: 'bold' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#0d6efd',
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                pointLabels: {
+                                    font: { size: 13, weight: 'bold' }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    </section>
+</div>

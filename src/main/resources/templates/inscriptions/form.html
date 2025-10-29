@@ -1,0 +1,73 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2 th:text="${inscription?.id} != null ? 'Editer Inscription' : 'Nouvelle Inscription'"></h2>
+        
+        <form th:action="${inscription?.id} != null ? @{'/inscriptions/' + ${inscription.id}} : @{/inscriptions}"
+              th:object="${inscription}" method="post" class="needs-validation" novalidate>
+            
+            <!-- Messages d'erreur -->
+            <div class="alert alert-danger" th:if="${#fields.hasErrors('*')}">
+                <h6>Veuillez corriger les erreurs suivantes :</h6>
+                <ul class="mb-0">
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                </ul>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Date d'inscription</label>
+                    <input class="form-control" type="date" th:field="*{dateInscription}" required />
+                    <div class="text-danger small" th:if="${#fields.hasErrors('dateInscription')}" th:errors="*{dateInscription}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" th:field="*{statut}" required>
+                        <option value="">Sélectionner un statut</option>
+                        <option value="Confirmée">Confirmée</option>
+                        <option value="En attente">En attente</option>
+                        <option value="Annulée">Annulée</option>
+                    </select>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('statut')}" th:errors="*{statut}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Montant (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" th:field="*{montant}" required />
+                    <div class="text-danger small" th:if="${#fields.hasErrors('montant')}" th:errors="*{montant}"></div>
+                </div>
+            </div>
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Activité</label>
+                    <select class="form-select" name="activiteId" required>
+                        <option value="">Sélectionner une activité</option>
+                        <option th:each="a : ${activites}" 
+                                th:value="${a.id}" 
+                                th:text="${a.nom + ' (' + a.niveau + ')'}"
+                                th:selected="${inscription?.activite?.id == a.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Membre</label>
+                    <select class="form-select" name="membreId" required>
+                        <option value="">Sélectionner un membre</option>
+                        <option th:each="m : ${membres}" 
+                                th:value="${m.id}" 
+                                th:text="${m.nom + ' (' + m.categorie + ')'}"
+                                th:selected="${inscription?.membre?.id == m.id}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-save me-1"></i>
+                    <span th:text="${inscription?.id} != null ? 'Mettre à jour' : 'Enregistrer'"></span>
+                </button>
+                <a class="btn btn-secondary ms-2" th:href="@{/inscriptions}">
+                    <i class="fas fa-times me-1"></i>
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </section>
+</div>
+
+

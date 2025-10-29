@@ -1,0 +1,49 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2>Inscriptions</h2>
+            <a class="btn btn-primary" th:href="@{/inscriptions/new}">Nouvelle inscription</a>
+        </div>
+        <form class="row g-2 mb-3">
+            <div class="col-auto">
+                <input class="form-control" type="date" name="start" th:value="${filter.startDate}" />
+            </div>
+            <div class="col-auto">
+                <input class="form-control" type="date" name="end" th:value="${filter.endDate}" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-secondary" type="submit">Filtrer</button>
+            </div>
+        </form>
+        <table class="table table-striped">
+            <thead>
+            <tr><th>ID</th><th>Date</th><th>Statut</th><th>Montant</th><th>Activité</th><th>Membre</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${inscriptions}">
+                <td th:text="${i.id}"></td>
+                <td th:text="${i.dateInscription}"></td>
+                <td>
+                    <form th:action="@{'/inscriptions/' + ${i.id} + '/statut'}" method="post" class="d-flex gap-2 align-items-center">
+                        <select class="form-select form-select-sm" name="statut">
+                            <option th:selected="${i.statut == 'payee'}" value="payee">payee</option>
+                            <option th:selected="${i.statut == 'en_attente'}" value="en_attente">en_attente</option>
+                            <option th:selected="${i.statut == 'annulee'}" value="annulee">annulee</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-success" type="submit">Maj</button>
+                    </form>
+                </td>
+                <td th:text="${i.montant}"></td>
+                <td th:text="${i.activite.nom}"></td>
+                <td th:text="${i.membre.nom}"></td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{'/inscriptions/' + ${i.id} + '/edit'}">Editer</a>
+                    <a class="btn btn-sm btn-outline-danger" th:href="@{'/inscriptions/' + ${i.id} + '/delete'}" onclick="return confirm('Supprimer ?')">Supprimer</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+
+

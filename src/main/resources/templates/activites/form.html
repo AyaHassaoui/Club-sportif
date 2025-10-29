@@ -1,0 +1,30 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2 th:text="${activite?.id} != null ? 'Editer Activité' : 'Nouvelle Activité'"></h2>
+        <form th:action="${activite?.id} != null ? @{'/activites/' + ${activite.id}} : @{/activites}"
+              th:object="${activite}" method="post" class="needs-validation" novalidate>
+            <div class="alert alert-danger" th:if="${#fields.hasErrors('*')}">
+                Veuillez corriger les erreurs ci-dessous.
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input class="form-control" type="text" th:field="*{nom}" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Niveau</label>
+                <input class="form-control" type="text" th:field="*{niveau}" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('niveau')}" th:errors="*{niveau}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Capacité</label>
+                <input class="form-control" type="number" th:field="*{capacite}" min="1" required />
+                <div class="text-danger small" th:if="${#fields.hasErrors('capacite')}" th:errors="*{capacite}"></div>
+            </div>
+            <button class="btn btn-primary" type="submit">Enregistrer</button>
+            <a class="btn btn-secondary" th:href="@{/activites}">Annuler</a>
+        </form>
+    </section>
+</div>
+
+

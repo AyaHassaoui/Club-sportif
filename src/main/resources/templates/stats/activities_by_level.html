@@ -1,0 +1,92 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2>Activités par niveau de difficulté</h2>
+        <div class="row mt-3">
+            <div class="col-12 col-lg-6">
+                <canvas id="lvlChart" height="220"></canvas>
+            </div>
+            <div class="col-12 col-lg-6">
+                <table class="table table-striped">
+                    <thead><tr><th>Niveau</th><th>Total</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${rows}">
+                        <td th:text="${r.label}"></td>
+                        <td th:text="${r.total}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script th:inline="javascript">
+            const lLabels = /*[[${rows.![label]}]]*/ [];
+            const lValues = /*[[${rows.![total]}]]*/ [];
+            const lc = document.getElementById('lvlChart');
+            if (lc && window.Chart) {
+                const colors = {
+                    'Débutant': '#20c997',
+                    'Intermédiaire': '#0dcaf0',
+                    'Avancé': '#ffc107',
+                    'Expert': '#fd7e14'
+                };
+                
+                new Chart(lc, {
+                    type: 'pie',
+                    data: { 
+                        labels: lLabels, 
+                        datasets: [{ 
+                            label: 'Activités', 
+                            data: lValues,
+                            backgroundColor: lLabels.map(l => colors[l] || '#6c757d'),
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            hoverBorderWidth: 5
+                        }] 
+                    },
+                    options: { 
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: {
+                            duration: 1500
+                        },
+                        plugins: { 
+                            legend: { 
+                                position: 'right',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13 },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#198754',
+                                borderWidth: 1,
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return label + ': ' + value + ' activités (' + percentage + '%)';
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Répartition des activités par niveau',
+                                font: { size: 16, weight: 'bold' },
+                                padding: { bottom: 15 }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    </section>
+</div>
+
+
+

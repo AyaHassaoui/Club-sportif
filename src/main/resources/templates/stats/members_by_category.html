@@ -1,0 +1,93 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <h2>Répartition des membres par catégorie</h2>
+        <div class="row mt-3">
+            <div class="col-12 col-lg-6">
+                <canvas id="catChart" height="220"></canvas>
+            </div>
+            <div class="col-12 col-lg-6">
+                <table class="table table-striped">
+                    <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${rows}">
+                        <td th:text="${r.label}"></td>
+                        <td th:text="${r.total}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script th:inline="javascript">
+            const cLabels = /*[[${rows.![label]}]]*/ [];
+            const cValues = /*[[${rows.![total]}]]*/ [];
+            const cc = document.getElementById('catChart');
+            if (cc && window.Chart) {
+                const colors = ['#0d6efd','#6610f2','#6f42c1','#d63384','#dc3545','#fd7e14','#ffc107','#198754','#20c997','#0dcaf0'];
+                
+                new Chart(cc, {
+                    type: 'bar',
+                    data: { 
+                        labels: cLabels, 
+                        datasets: [{ 
+                            label: 'Nombre de membres',
+                            data: cValues,
+                            backgroundColor: cValues.map((_, i) => colors[i % colors.length]),
+                            borderColor: cValues.map((_, i) => colors[i % colors.length]),
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }] 
+                    },
+                    options: { 
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: {
+                            duration: 1500
+                        },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#0d6efd',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true
+                            },
+                            title: {
+                                display: true,
+                                text: 'Répartition des membres par catégorie',
+                                font: { size: 16, weight: 'bold' },
+                                padding: { bottom: 15 }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: { size: 12 }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: { size: 12 }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    </section>
+</div>
+
+
+

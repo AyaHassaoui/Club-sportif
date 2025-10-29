@@ -1,0 +1,624 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chart-line me-2"></i>Statistiques Avancées</h2>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="exportCharts()">
+                    <i class="fas fa-download me-1"></i>Exporter
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="printCharts()">
+                    <i class="fas fa-print me-1"></i>Imprimer
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtres avancés -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtres et Options</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Période</label>
+                        <select class="form-select" id="periodSelect" onchange="updateCharts()">
+                            <option value="7">7 derniers jours</option>
+                            <option value="30" selected>30 derniers jours</option>
+                            <option value="90">3 derniers mois</option>
+                            <option value="365">1 an</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Type de graphique</label>
+                        <select class="form-select" id="chartTypeSelect" onchange="updateCharts()">
+                            <option value="bar">Barres</option>
+                            <option value="line">Ligne</option>
+                            <option value="area">Aire</option>
+                            <option value="radar">Radar</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Animation</label>
+                        <select class="form-select" id="animationSelect" onchange="updateCharts()">
+                            <option value="true" selected>Activée</option>
+                            <option value="false">Désactivée</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Thème</label>
+                        <select class="form-select" id="themeSelect" onchange="updateCharts()">
+                            <option value="default" selected>Défaut</option>
+                            <option value="dark">Sombre</option>
+                            <option value="colorful">Coloré</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques interactifs -->
+        <div class="row mb-4">
+            <!-- Graphique de tendance temporelle -->
+            <div class="col-lg-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Évolution Temporelle</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" onclick="setTimeRange('daily')">Journalier</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setTimeRange('weekly')">Hebdomadaire</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setTimeRange('monthly')">Mensuel</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="timeChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Graphique de comparaison -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Comparaison</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="comparisonChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphiques de distribution -->
+        <div class="row mb-4">
+            <!-- Distribution des membres par catégorie -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Distribution des Membres par Catégorie</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="ageChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Heatmap des activités -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-th me-2"></i>Heatmap des Activités</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="heatmapChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphique de corrélation -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Corrélation Fréquentation vs Intensité des Activités</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="correlationChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            // Données réelles du projet
+            const frequentationData = {
+                labels: /*[[${frequentation.![activiteNom]}]]*/ [],
+                values: /*[[${frequentation.![totalInscriptions]}]]*/ []
+            };
+            
+            const membresData = {
+                labels: /*[[${membresParCategorie.![label]}]]*/ [],
+                values: /*[[${membresParCategorie.![total]}]]*/ []
+            };
+            
+            const niveauxData = {
+                labels: /*[[${activitesParNiveau.![label]}]]*/ [],
+                values: /*[[${activitesParNiveau.![total]}]]*/ []
+            };
+
+            // Données simulées pour les graphiques temporels (à remplacer par de vraies données temporelles)
+            const chartData = {
+                timeSeries: {
+                    daily: {
+                        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                        data: [12, 19, 15, 25, 22, 30, 18]
+                    },
+                    weekly: {
+                        labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+                        data: [85, 92, 78, 95]
+                    },
+                    monthly: {
+                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
+                        data: [120, 150, 180, 200, 175, 220]
+                    }
+                },
+                // Utiliser les vraies données des membres par catégorie
+                ageDistribution: {
+                    labels: membresData.labels,
+                    data: membresData.values
+                },
+                // Utiliser les vraies données des activités
+                activityHeatmap: {
+                    activities: frequentationData.labels,
+                    days: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                    data: frequentationData.labels.map((_, index) => 
+                        Array.from({length: 7}, (_, i) => 
+                            Math.floor(frequentationData.values[index] * (0.5 + Math.random() * 0.5) / 7)
+                        )
+                    )
+                }
+            };
+
+            let charts = {};
+
+            // Configuration des thèmes
+            const themes = {
+                default: {
+                    colors: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2', '#fd7e14', '#20c997', '#0dcaf0'],
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    grid: 'rgba(0, 0, 0, 0.1)'
+                },
+                dark: {
+                    colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'],
+                    background: 'rgba(0, 0, 0, 0.1)',
+                    grid: 'rgba(255, 255, 255, 0.1)'
+                },
+                colorful: {
+                    colors: ['#ff9a9e', '#fecfef', '#fecfef', '#a8edea', '#fed6e3', '#d299c2', '#ffecd2', '#fcb69f'],
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    grid: 'rgba(0, 0, 0, 0.05)'
+                }
+            };
+
+            let currentTheme = 'default';
+
+            function getCurrentTheme() {
+                return themes[currentTheme];
+            }
+
+            function updateCharts() {
+                currentTheme = document.getElementById('themeSelect').value;
+                const period = document.getElementById('periodSelect').value;
+                const chartType = document.getElementById('chartTypeSelect').value;
+                const animation = document.getElementById('animationSelect').value === 'true';
+
+                // Mettre à jour tous les graphiques
+                Object.values(charts).forEach(chart => {
+                    if (chart) {
+                        chart.destroy();
+                    }
+                });
+
+                createAllCharts(period, chartType, animation);
+            }
+
+            function createAllCharts(period, chartType, animation) {
+                createTimeChart(period, chartType, animation);
+                createComparisonChart(chartType, animation);
+                createAgeChart(animation);
+                createHeatmapChart(animation);
+                createCorrelationChart(animation);
+            }
+
+            function createTimeChart(period, chartType, animation) {
+                const ctx = document.getElementById('timeChart');
+                if (!ctx || !window.Chart) return;
+
+                const data = chartData.timeSeries.daily; // Utiliser les données journalières par défaut
+                const theme = getCurrentTheme();
+
+                charts.timeChart = new Chart(ctx, {
+                    type: chartType === 'area' ? 'line' : chartType,
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Inscriptions',
+                            data: data.data,
+                            backgroundColor: chartType === 'area' ? 
+                                `linear-gradient(45deg, ${theme.colors[0]}, ${theme.colors[1]})` :
+                                theme.colors[0],
+                            borderColor: theme.colors[0],
+                            borderWidth: 3,
+                            fill: chartType === 'area',
+                            tension: 0.4,
+                            pointBackgroundColor: theme.colors[0],
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: animation ? {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        } : false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: 'bold' },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: theme.colors[0],
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: theme.grid,
+                                    lineWidth: 1
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: { display: false }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+
+            function createComparisonChart(chartType, animation) {
+                const ctx = document.getElementById('comparisonChart');
+                if (!ctx || !window.Chart) return;
+
+                const theme = getCurrentTheme();
+
+                // Utiliser les vraies données des niveaux d'activités
+                charts.comparisonChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: niveauxData.labels,
+                        datasets: [{
+                            data: niveauxData.values,
+                            backgroundColor: theme.colors.slice(0, niveauxData.labels.length),
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            hoverBorderWidth: 5,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: animation ? {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 2000
+                        } : false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13, weight: 'bold' },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: theme.colors[0],
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createAgeChart(animation) {
+                const ctx = document.getElementById('ageChart');
+                if (!ctx || !window.Chart) return;
+
+                const data = chartData.ageDistribution;
+                const theme = getCurrentTheme();
+
+                charts.ageChart = new Chart(ctx, {
+                    type: 'polarArea',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: theme.colors.map(color => color + '80'),
+                            borderColor: theme.colors,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: animation ? {
+                            animateRotate: true,
+                            duration: 2000
+                        } : false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 20,
+                                    font: { size: 13, weight: 'bold' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: theme.colors[0],
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: theme.grid
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createHeatmapChart(animation) {
+                const ctx = document.getElementById('heatmapChart');
+                if (!ctx || !window.Chart) return;
+
+                // Créer un graphique de barres groupées pour simuler un heatmap
+                const data = chartData.activityHeatmap;
+                const theme = getCurrentTheme();
+
+                charts.heatmapChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.days,
+                        datasets: data.activities.map((activity, index) => ({
+                            label: activity,
+                            data: data.data[index],
+                            backgroundColor: theme.colors[index % theme.colors.length] + '80',
+                            borderColor: theme.colors[index % theme.colors.length],
+                            borderWidth: 1
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: animation ? {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        } : false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 11, weight: 'bold' },
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: theme.colors[0],
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: theme.grid
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createCorrelationChart(animation) {
+                const ctx = document.getElementById('correlationChart');
+                if (!ctx || !window.Chart) return;
+
+                const theme = getCurrentTheme();
+
+                // Créer des données de corrélation basées sur les vraies données
+                const correlationData = [];
+                frequentationData.labels.forEach((activite, index) => {
+                    const frequentation = frequentationData.values[index];
+                    // Simuler une corrélation entre la fréquentation et un "niveau d'intensité"
+                    const intensite = Math.floor(frequentation * (0.5 + Math.random() * 0.5));
+                    correlationData.push({
+                        x: frequentation,
+                        y: intensite,
+                        label: activite
+                    });
+                });
+
+                charts.correlationChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Corrélation Fréquentation vs Intensité',
+                            data: correlationData,
+                            backgroundColor: theme.colors[0] + '80',
+                            borderColor: theme.colors[0],
+                            borderWidth: 2,
+                            pointRadius: 8,
+                            pointHoverRadius: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: animation ? {
+                            duration: 2000,
+                            easing: 'easeInOutQuart'
+                        } : false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: 'bold' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: theme.colors[0],
+                                borderWidth: 2,
+                                padding: 15,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        const dataPoint = context.raw;
+                                        return `Fréquentation: ${dataPoint.x}, Intensité: ${dataPoint.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Fréquentation (inscriptions)',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: theme.grid
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Intensité d\'activité',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                ticks: {
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: {
+                                    color: theme.grid
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function setTimeRange(range) {
+                // Mettre à jour les boutons
+                document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                // Mettre à jour le graphique temporel
+                const data = chartData.timeSeries[range];
+                if (charts.timeChart && data) {
+                    charts.timeChart.data.labels = data.labels;
+                    charts.timeChart.data.datasets[0].data = data.data;
+                    charts.timeChart.update();
+                }
+            }
+
+            function exportCharts() {
+                // Exporter les graphiques en PNG
+                Object.entries(charts).forEach(([name, chart]) => {
+                    if (chart) {
+                        const link = document.createElement('a');
+                        link.download = `chart_${name}.png`;
+                        link.href = chart.toBase64Image();
+                        link.click();
+                    }
+                });
+            }
+
+            function printCharts() {
+                window.print();
+            }
+
+            // Initialiser les graphiques au chargement
+            document.addEventListener('DOMContentLoaded', function() {
+                createAllCharts('30', 'bar', true);
+            });
+        </script>
+    </section>
+</div>

@@ -1,0 +1,35 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2>Membres</h2>
+            <a class="btn btn-primary" th:href="@{/membres/new}">Nouveau membre</a>
+        </div>
+        <form class="row g-2 mb-3">
+            <div class="col-auto">
+                <input class="form-control" type="text" name="categorie" th:value="${categorie}" placeholder="Filtrer par catégorie" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-secondary" type="submit">Filtrer</button>
+            </div>
+        </form>
+        <table class="table table-striped">
+            <thead>
+            <tr><th>ID</th><th>Nom</th><th>Catégorie</th><th>Adhésion</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${membres}">
+                <td th:text="${m.id}"></td>
+                <td th:text="${m.nom}"></td>
+                <td th:text="${m.categorie}"></td>
+                <td th:text="${m.dateAdhesion}"></td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{'/membres/' + ${m.id} + '/edit'}">Editer</a>
+                    <a class="btn btn-sm btn-outline-danger" th:href="@{'/membres/' + ${m.id} + '/delete'}" onclick="return confirm('Supprimer ?')">Supprimer</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+
+

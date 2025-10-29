@@ -1,0 +1,48 @@
+<div th:replace="~{layout :: layout(~{::section})}">
+    <section>
+        <div class="text-center mb-4">
+            <h1 class="fw-bold">Bienvenue</h1>
+            <p class="text-muted">Choisissez une fonctionnalité pour commencer</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-3">
+                <a class="text-decoration-none" th:href="@{/activites}">
+                    <div class="card h-100 text-center p-4">
+                        <div class="fs-3">🏋️</div>
+                        <div class="mt-2 fw-semibold">Activités</div>
+                        <div class="text-muted small">Gérer les activités</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <a class="text-decoration-none" th:href="@{/membres}">
+                    <div class="card h-100 text-center p-4">
+                        <div class="fs-3">👥</div>
+                        <div class="mt-2 fw-semibold">Membres</div>
+                        <div class="text-muted small">Gérer les membres</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <a class="text-decoration-none" th:href="@{/inscriptions}">
+                    <div class="card h-100 text-center p-4">
+                        <div class="fs-3">📝</div>
+                        <div class="mt-2 fw-semibold">Inscriptions</div>
+                        <div class="text-muted small">Gérer les inscriptions</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <a class="text-decoration-none" th:href="@{/stats/frequentation}">
+                    <div class="card h-100 text-center p-4">
+                        <div class="fs-3">📊</div>
+                        <div class="mt-2 fw-semibold">Statistiques</div>
+                        <div class="text-muted small">Graphiques et indicateurs</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+
